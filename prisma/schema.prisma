@@ -1,0 +1,101 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+model users {
+    id           Int        @id @default(autoincrement())
+    userName     String     @unique @db.VarChar(50)
+    email        String     @unique(map: "email") @db.Char(50)
+    emailConfirm Boolean    @default(false)
+    password     String     @db.Char(255)
+    role         UserRole   @default(member)
+    status       Boolean    @default(true)
+    avatar       String     @db.Text
+    createAt     String
+    updateAt     String
+    address      String?
+    ipList       String     @default("[]")
+    receipts     receipts[]
+}
+
+model categories {
+    id       Int        @id @default(autoincrement())
+    title    String
+    status   Boolean    @default(true)
+    products products[]
+}
+
+model products {
+    id         Int               @id @default(autoincrement())
+    name       String
+    price      Float
+    des        String            @default("dang cap nhat")
+    sellStatus Boolean           @default(false)
+    destroy    Boolean           @default(false)
+    avatar     String            @db.LongText
+    pictures   pictures[]
+    categoryId Int
+    category   categories        @relation(fields: [categoryId], references: [id])
+    sold       receipt_details[]
+    hide       Boolean           @default(false)
+}
+
+model pictures {
+    id        Int      @id @default(autoincrement())
+    url       String   @db.LongText
+    productId Int
+    product   products @relation(fields: [productId], references: [id])
+
+    @@index([productId], map: "pictures_productId_fkey")
+}
+
+enum UserRole {
+    admin
+    member
+}
+
+enum ReceiptPayMode {
+    cash
+    zalo_pay
+}
+
+enum ReceiptStatus {
+    shopping
+    pending
+    accepted
+    shipping
+    done
+}
+
+model receipts {
+    id         Int               @id @default(autoincrement())
+    total      Float             @default(0)
+    createAt   String
+    updateAt   String
+    payMode    ReceiptPayMode?   @default(cash)
+    paid       Boolean           @default(false)
+    paidAt     String?
+    userId     Int
+    user       users             @relation(fields: [userId], references: [id])
+    status     ReceiptStatus     @default(shopping)
+    pending    String?
+    acceptAt   String?
+    shippingAt String?
+    doneAt     String?
+    detail     receipt_details[]
+}
+
+model receipt_details {
+    id        Int      @id @default(autoincrement())
+    receiptId Int
+    receipt   receipts @relation(fields: [receiptId], references: [id])
+    productId Int
+    product   products @relation(fields: [productId], references: [id])
+    quantity  Int
+    note      String   @default("")
+}
